@@ -203,8 +203,8 @@ export function TrainSearchShell({
   return (
     <section className="search-shell">
       <form className="search-form" onSubmit={handleSubmit}>
-        <div className="form-grid">
-          <div className="field">
+        <div className="station-row">
+          <div className="field field--station">
             <label htmlFor="from-station">From station</label>
             <input
               id="from-station"
@@ -227,11 +227,32 @@ export function TrainSearchShell({
               disabled={!searchEnabled || (!from && !to)}
               aria-label="Swap from and to stations"
             >
-              Swap
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                className="swap-icon"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M7 7H18M18 7L14.5 3.5M18 7L14.5 10.5"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M17 17H6M6 17L9.5 13.5M6 17L9.5 20.5"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
             </button>
           </div>
 
-          <div className="field">
+          <div className="field field--station">
             <label htmlFor="to-station">To station</label>
             <input
               id="to-station"
@@ -245,18 +266,18 @@ export function TrainSearchShell({
               required
             />
           </div>
+        </div>
 
-          <div className="field field--full">
-            <label htmlFor="departure-time">Departure time</label>
-            <input
-              id="departure-time"
-              type="time"
-              value={time}
-              onChange={(event) => setTime(event.target.value)}
-              disabled={!searchEnabled}
-              required
-            />
-          </div>
+        <div className="field field--full">
+          <label htmlFor="departure-time">Departure time</label>
+          <input
+            id="departure-time"
+            type="time"
+            value={time}
+            onChange={(event) => setTime(event.target.value)}
+            disabled={!searchEnabled}
+            required
+          />
         </div>
 
         <div className="quick-routes">
