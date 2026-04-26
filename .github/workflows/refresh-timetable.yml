@@ -38,7 +38,16 @@ jobs:
         run: npm ci
 
       - name: Parse Central Railway PDFs into CSV
+        id: parse_central
+        continue-on-error: true
         run: npm run parse:central -- "${{ secrets.TIMETABLE_SOURCE_URL }}" data/central-railway-parsed.csv
+
+      - name: Use repository fallback CSV when parser fetch fails
+        if: steps.parse_central.outcome != 'success'
+        run: echo "Official source fetch failed on the runner. Using the checked-in fallback CSV."
+
+      - name: Verify parsed CSV is available
+        run: test -s data/central-railway-parsed.csv
 
       - name: Refresh Supabase timetable tables
         run: npm run ingest

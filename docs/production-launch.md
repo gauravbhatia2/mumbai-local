@@ -56,6 +56,8 @@ https://cr.indianrailways.gov.in/view_section.jsp?id=0,5,2360&lang=0
    - `freshness.status` is `success`
    - `freshness.lastUpdatedAt` is recent
 
+If GitHub Actions cannot reach `cr.indianrailways.gov.in`, the scheduled workflow will continue by using the checked-in `data/central-railway-parsed.csv` fallback. Update that file whenever you run the parser successfully from a machine that can reach the official source.
+
 ## 5. Rollback
 
 If a bad load is activated, flip the slot manually in Supabase:

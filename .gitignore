@@ -9,5 +9,4 @@ npm-debug.log*
 devserver.log
 *.tsbuildinfo
 scripts/__pycache__/
-data/central-railway-parsed.csv
 mumbai-local/

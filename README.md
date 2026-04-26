@@ -86,6 +86,8 @@ The workflow is already configured to:
 7. Flip `refresh_state.active_slot` so the live app reads the new dataset instantly.
 8. Leave the live slot untouched if the refresh fails.
 
+If GitHub's runner cannot reach the official railway host on a given day, the workflow falls back to the checked-in `data/central-railway-parsed.csv` so the scheduled refresh still succeeds with the last known good official dataset.
+
 ## Data model
 
 - `stations(id, slug, name, line)`
