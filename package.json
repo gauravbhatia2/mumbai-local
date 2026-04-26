@@ -1,0 +1,28 @@
+{
+  "name": "mumbai-local-smart-train-finder",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "check": "tsc --noEmit",
+    "ingest": "node scripts/ingest-timetable.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.56.1",
+    "csv-parse": "^5.5.6",
+    "next": "^15.3.3",
+    "pg": "^8.13.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "typescript": "^5.7.2"
+  }
+}
+

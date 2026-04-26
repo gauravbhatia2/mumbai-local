@@ -1,0 +1,30 @@
+train_id,train_name,train_type,line,origin_station,destination_station,station_name,arrival_time,departure_time,stop_order
+WR-1001,Churchgate Borivali Fast,fast,Western,Churchgate,Borivali,Churchgate,06:18,06:18,1
+WR-1001,Churchgate Borivali Fast,fast,Western,Churchgate,Borivali,Dadar,06:29,06:29,2
+WR-1001,Churchgate Borivali Fast,fast,Western,Churchgate,Borivali,Bandra,06:36,06:36,3
+WR-1001,Churchgate Borivali Fast,fast,Western,Churchgate,Borivali,Andheri,06:44,06:44,4
+WR-1001,Churchgate Borivali Fast,fast,Western,Churchgate,Borivali,Borivali,07:02,07:02,5
+WR-1002,Churchgate Virar Slow,slow,Western,Churchgate,Virar,Churchgate,06:28,06:28,1
+WR-1002,Churchgate Virar Slow,slow,Western,Churchgate,Virar,Dadar,06:40,06:40,2
+WR-1002,Churchgate Virar Slow,slow,Western,Churchgate,Virar,Bandra,06:47,06:47,3
+WR-1002,Churchgate Virar Slow,slow,Western,Churchgate,Virar,Andheri,06:56,06:56,4
+WR-1002,Churchgate Virar Slow,slow,Western,Churchgate,Virar,Borivali,07:18,07:18,5
+WR-1002,Churchgate Virar Slow,slow,Western,Churchgate,Virar,Virar,07:45,07:45,6
+CR-2001,CSMT Thane Slow,slow,Central,CSMT,Thane,CSMT,06:10,06:10,1
+CR-2001,CSMT Thane Slow,slow,Central,CSMT,Thane,Dadar,06:24,06:24,2
+CR-2001,CSMT Thane Slow,slow,Central,CSMT,Thane,Kurla,06:34,06:34,3
+CR-2001,CSMT Thane Slow,slow,Central,CSMT,Thane,Ghatkopar,06:40,06:40,4
+CR-2001,CSMT Thane Slow,slow,Central,CSMT,Thane,Thane,06:55,06:55,5
+CR-2002,CSMT Kalyan Fast,fast,Central,CSMT,Kalyan,CSMT,06:22,06:22,1
+CR-2002,CSMT Kalyan Fast,fast,Central,CSMT,Kalyan,Dadar,06:33,06:33,2
+CR-2002,CSMT Kalyan Fast,fast,Central,CSMT,Kalyan,Kurla,06:42,06:42,3
+CR-2002,CSMT Kalyan Fast,fast,Central,CSMT,Kalyan,Thane,07:03,07:03,4
+CR-2002,CSMT Kalyan Fast,fast,Central,CSMT,Kalyan,Dombivli,07:16,07:16,5
+CR-2002,CSMT Kalyan Fast,fast,Central,CSMT,Kalyan,Kalyan,07:26,07:26,6
+CR-2003,Dadar Kalyan Slow,slow,Central,Dadar,Kalyan,Dadar,06:38,06:38,1
+CR-2003,Dadar Kalyan Slow,slow,Central,Dadar,Kalyan,Kurla,06:48,06:48,2
+CR-2003,Dadar Kalyan Slow,slow,Central,Dadar,Kalyan,Ghatkopar,06:56,06:56,3
+CR-2003,Dadar Kalyan Slow,slow,Central,Dadar,Kalyan,Thane,07:12,07:12,4
+CR-2003,Dadar Kalyan Slow,slow,Central,Dadar,Kalyan,Dombivli,07:25,07:25,5
+CR-2003,Dadar Kalyan Slow,slow,Central,Dadar,Kalyan,Kalyan,07:35,07:35,6
+
