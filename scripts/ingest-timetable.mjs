@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import fs from "node:fs";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
@@ -18,6 +19,39 @@ const REQUIRED_HEADERS = [
   "departure_time",
   "stop_order",
 ];
+
+function loadLocalEnvFile() {
+  const envPath = path.resolve(process.cwd(), ".env.local");
+
+  if (!process.env.SUPABASE_URL && !process.env.DATABASE_URL) {
+    try {
+      const envText = fs.readFileSync(envPath, "utf8");
+
+      for (const line of envText.split(/\r?\n/)) {
+        if (!line || line.trim().startsWith("#")) {
+          continue;
+        }
+
+        const separatorIndex = line.indexOf("=");
+
+        if (separatorIndex === -1) {
+          continue;
+        }
+
+        const key = line.slice(0, separatorIndex);
+        const value = line.slice(separatorIndex + 1);
+
+        if (!(key in process.env)) {
+          process.env[key] = value;
+        }
+      }
+    } catch (error) {
+      if (error?.code !== "ENOENT") {
+        throw error;
+      }
+    }
+  }
+}
 
 function normalizeStationName(value) {
   return value.trim().replace(/\s+/g, " ");
@@ -64,7 +98,15 @@ async function loadCsvSource() {
       throw new Error(`Failed to download timetable CSV: ${response.status}`);
     }
 
-    return response.text();
+    const sourceText = await response.text();
+
+    if (/^\s*</.test(sourceText)) {
+      throw new Error(
+        "TIMETABLE_SOURCE_URL returned an HTML landing page instead of a CSV feed. Provide a direct CSV URL or leave TIMETABLE_SOURCE_URL empty to use a local CSV file.",
+      );
+    }
+
+    return sourceText;
   }
 
   const absolutePath = path.resolve(process.cwd(), sourcePath);
@@ -339,6 +381,8 @@ async function recordRefreshFailure(client, message) {
 }
 
 async function main() {
+  loadLocalEnvFile();
+
   const databaseUrl = process.env.DATABASE_URL;
 
   if (!databaseUrl) {
