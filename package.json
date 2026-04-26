@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "check": "tsc --noEmit",
-    "ingest": "node scripts/ingest-timetable.mjs"
+    "ingest": "node scripts/ingest-timetable.mjs",
+    "parse:central": "python scripts/parse-central-railway.py"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.56.1",
@@ -25,4 +26,3 @@
     "typescript": "^5.7.2"
   }
 }
-

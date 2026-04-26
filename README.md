@@ -14,8 +14,9 @@ Production-ready MVP for a fast Mumbai local search experience built with:
 - `app/api/health/route.ts` exposes operational health and refresh status
 - `supabase/schema.sql` creates the schema, indexes, live views, and `search_trains` function
 - `supabase/search-query.sql` shows the core indexed join behind route lookups
+- `scripts/parse-central-railway.py` parses the official Central Railway timetable PDFs into a normalized CSV
 - `scripts/ingest-timetable.mjs` downloads or reads CSV data, normalizes it, validates it, and activates the inactive slot
-- `.github/workflows/refresh-timetable.yml` runs the ingest job every day at `30 21 * * *`, which is 3:00 AM IST
+- `.github/workflows/refresh-timetable.yml` runs the parser plus ingest job every day at `30 21 * * *`, which is 3:00 AM IST
 - `docs/production-launch.md` is the production rollout runbook
 
 ## Environment variables
@@ -26,8 +27,8 @@ Create a local `.env.local` from `.env.example`:
 SUPABASE_URL=...
 SUPABASE_SERVICE_ROLE_KEY=...
 DATABASE_URL=...
-TIMETABLE_SOURCE_URL=...
-TIMETABLE_SOURCE_PATH=data/mumbai-local-sample.csv
+TIMETABLE_SOURCE_URL=https://cr.indianrailways.gov.in/view_section.jsp?id=0,5,2360&lang=0
+TIMETABLE_SOURCE_PATH=data/central-railway-parsed.csv
 REFRESH_STALE_HOURS=36
 ```
 
@@ -35,7 +36,8 @@ Notes:
 
 - `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are used by the Vercel-hosted app for read-only server-side queries.
 - `DATABASE_URL` is used by the GitHub Action ingestion job to write directly into Supabase Postgres.
-- `TIMETABLE_SOURCE_URL` is optional. If omitted, the script ingests `data/mumbai-local-sample.csv`.
+- `TIMETABLE_SOURCE_URL` should point to the official Central Railway timetable landing page. The parser resolves the linked PDFs and writes a normalized CSV.
+- `TIMETABLE_SOURCE_PATH` is the parser output path in production, or a local fallback CSV path for manual testing.
 - `REFRESH_STALE_HOURS` controls when the app marks live timetable data as degraded. Default: `36`.
 
 ## Local development
@@ -55,6 +57,7 @@ In production, demo fallback is disabled and the app returns a maintenance/degra
 3. Copy the Postgres connection string into `DATABASE_URL`.
 4. Copy the project URL and service role key into `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
 5. Verify the `refresh_status_view` and `search_trains` function were created successfully.
+6. Run `python -m pip install -r requirements-parser.txt` if you want to execute the official parser locally.
 
 ## Vercel deployment
 
@@ -75,7 +78,7 @@ Add these repository secrets:
 The workflow is already configured to:
 
 1. Run daily at 3:00 AM IST.
-2. Fetch the source timetable CSV.
+2. Parse the official Central Railway PDFs into `data/central-railway-parsed.csv`.
 3. Normalize station and train rows.
 4. Validate source rows before any slot truncation.
 5. Load the inactive dataset slot.
@@ -111,10 +114,25 @@ The workflow is already configured to:
   - refresh freshness metadata
 - `GET /api/trains` returns `503` in production if Supabase is not configured.
 
+## Manual parser run
+
+```bash
+python scripts/parse-central-railway.py \
+  "https://cr.indianrailways.gov.in/view_section.jsp?id=0,5,2360&lang=0" \
+  data/central-railway-parsed.csv
+```
+
+Then load the generated CSV into Supabase:
+
+```bash
+TIMETABLE_SOURCE_URL= \
+TIMETABLE_SOURCE_PATH=data/central-railway-parsed.csv \
+npm run ingest
+```
+
 ## Suggested next steps
 
-- Replace the sample CSV with a real daily source feed.
-- Add materialized route summaries for the top commuter routes.
 - Add synthetic monitoring to verify the 3:00 AM IST refresh completes successfully.
+- Expand the parser to cover Western Railway if you want a full citywide launch beyond Central Railway-operated lines.
 
 See `docs/production-launch.md` for the first production rollout checklist, secret setup, manual ingestion flow, and rollback steps.

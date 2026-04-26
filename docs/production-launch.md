@@ -33,6 +33,12 @@
 - `SUPABASE_DATABASE_URL`
 - `TIMETABLE_SOURCE_URL`
 
+Use the official Central Railway timetable landing page for `TIMETABLE_SOURCE_URL`:
+
+```text
+https://cr.indianrailways.gov.in/view_section.jsp?id=0,5,2360&lang=0
+```
+
 ### Local-only variables
 
 - `DATABASE_URL`
@@ -41,9 +47,11 @@
 ## 4. First production data load
 
 1. Set `DATABASE_URL` locally or run the GitHub Action manually with `workflow_dispatch`.
-2. Run `npm.cmd run ingest` once against the real source feed.
-3. Confirm `refresh_state.active_slot` flipped to the newly loaded slot.
-4. Open `/api/health` and check:
+2. Install the parser dependency locally with `python -m pip install -r requirements-parser.txt`.
+3. Run `python scripts/parse-central-railway.py "https://cr.indianrailways.gov.in/view_section.jsp?id=0,5,2360&lang=0" data/central-railway-parsed.csv`.
+4. Run `npm.cmd run ingest` with `TIMETABLE_SOURCE_URL` blank and `TIMETABLE_SOURCE_PATH=data/central-railway-parsed.csv`.
+5. Confirm `refresh_state.active_slot` flipped to the newly loaded slot.
+6. Open `/api/health` and check:
    - `appStatus` is `ok` or `degraded`
    - `freshness.status` is `success`
    - `freshness.lastUpdatedAt` is recent

@@ -18,18 +18,29 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
 
+      - name: Install parser dependencies
+        run: python -m pip install -r requirements-parser.txt
+
       - name: Install dependencies
         run: npm ci
+
+      - name: Parse Central Railway PDFs into CSV
+        run: npm run parse:central -- "${{ secrets.TIMETABLE_SOURCE_URL }}" data/central-railway-parsed.csv
 
       - name: Refresh Supabase timetable tables
         run: npm run ingest
         env:
           DATABASE_URL: ${{ secrets.SUPABASE_DATABASE_URL }}
-          TIMETABLE_SOURCE_URL: ${{ secrets.TIMETABLE_SOURCE_URL }}
-          TIMETABLE_SOURCE_PATH: data/mumbai-local-sample.csv
+          TIMETABLE_SOURCE_URL: ""
+          TIMETABLE_SOURCE_PATH: data/central-railway-parsed.csv

@@ -175,15 +175,21 @@ function buildDataset(rows) {
       row.destinationStation,
     ]) {
       const slug = normalizeSlug(stationName);
+      const existingStation = stations.get(slug);
+
       stations.set(slug, {
         slug,
         name: stationName,
-        line: row.line,
+        line:
+          existingStation && existingStation.line !== row.line
+            ? "Multiple"
+            : row.line,
       });
     }
 
-    const existingTrain = trains.get(row.trainId) ?? {
-      id: row.trainId,
+    const trainKey = `${normalizeSlug(row.line)}:${row.trainId}`;
+    const existingTrain = trains.get(trainKey) ?? {
+      id: trainKey,
       name: row.trainName,
       type: row.trainType,
       originStationSlug: normalizeSlug(row.originStation),
@@ -199,7 +205,7 @@ function buildDataset(rows) {
         normalizeSlug(row.destinationStation)
     ) {
       throw new Error(
-        `Train ${row.trainId} has inconsistent metadata across source rows.`,
+        `Train ${row.trainId} on ${row.line} has inconsistent metadata across source rows.`,
       );
     }
 
@@ -210,7 +216,7 @@ function buildDataset(rows) {
       stopOrder: row.stopOrder,
     });
 
-    trains.set(row.trainId, existingTrain);
+    trains.set(trainKey, existingTrain);
   }
 
   for (const train of trains.values()) {
