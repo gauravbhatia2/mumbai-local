@@ -27,6 +27,11 @@ export type TrainSearchResult = {
   journeyMinutes: number;
 };
 
+export type SearchContext = {
+  rolledOverToNextService: boolean;
+  relaxedOriginOnly: boolean;
+};
+
 export type TrainSearchApiResponse = {
   query: {
     from: string;
@@ -37,6 +42,7 @@ export type TrainSearchApiResponse = {
   freshness: RefreshMetadata;
   bestOptionId: string | null;
   results: TrainSearchResult[];
+  searchContext?: SearchContext;
 };
 
 export type RuntimeStatus = {

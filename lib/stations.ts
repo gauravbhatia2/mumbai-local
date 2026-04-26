@@ -50,7 +50,7 @@ const loadStations = unstable_cache(
 
     return (data ?? []) as StationOption[];
   },
-  ["station-options"],
+  ["station-options-v2"],
   {
     revalidate: 60 * 60 * 24,
     tags: ["stations"],
@@ -93,7 +93,7 @@ const loadRefreshMetadata = unstable_cache(
       message: data.last_refresh_message,
     });
   },
-  ["refresh-state"],
+  ["refresh-state-v2"],
   {
     revalidate: 300,
     tags: ["refresh-state"],

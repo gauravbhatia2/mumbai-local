@@ -45,23 +45,28 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const [results, freshness] = await Promise.all([
-      searchTrainOptions({
-        from: query.from,
-        to: query.to,
-        time: query.time,
-        originOnly: query.originOnly ?? false,
-        limit: 15,
-      }),
-      getRefreshMetadata(),
+    const searchPromise = searchTrainOptions({
+      from: query.from,
+      to: query.to,
+      time: query.time,
+      originOnly: query.originOnly ?? false,
+      limit: 15,
+    });
+    const freshnessPromise = getRefreshMetadata();
+
+    const [searchResponse, freshness] = await Promise.all([
+      searchPromise,
+      freshnessPromise,
     ]);
+    const searchResults = searchResponse.items;
 
     return NextResponse.json(
       {
         query,
         freshness,
-        bestOptionId: results[0]?.trainId ?? null,
-        results,
+        bestOptionId: searchResults[0]?.trainId ?? null,
+        results: searchResults,
+        searchContext: searchResponse.searchContext,
       },
       {
         headers: {

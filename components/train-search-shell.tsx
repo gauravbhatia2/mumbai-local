@@ -88,6 +88,7 @@ export function TrainSearchShell({
   };
 
   const activeFreshness = response?.freshness ?? freshness;
+  const searchContext = response?.searchContext;
 
   return (
     <section className="search-shell">
@@ -176,6 +177,19 @@ export function TrainSearchShell({
               `Timetable data may be stale or degraded. Last successful refresh was ${formatFreshnessLabel(
                 activeFreshness.lastUpdatedAt,
               )}.`}
+          </div>
+        ) : null}
+
+        {searchContext?.rolledOverToNextService ||
+        searchContext?.relaxedOriginOnly ? (
+          <div className="warning-banner">
+            {searchContext.rolledOverToNextService
+              ? "Showing the next available service from the current timetable because no later train matched the selected time."
+              : "Showing passing trains because no origin-starting train matched the current filter."}
+            {searchContext.rolledOverToNextService &&
+            searchContext.relaxedOriginOnly
+              ? " The search also relaxed the origin-only filter to avoid an empty result."
+              : ""}
           </div>
         ) : null}
       </form>
