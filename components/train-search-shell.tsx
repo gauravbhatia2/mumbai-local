@@ -1,12 +1,22 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import type {
   RefreshMetadata,
   StationOption,
   TrainSearchApiResponse,
 } from "@/lib/types";
 import { formatFreshnessLabel } from "@/lib/time";
+
+const QUICK_ROUTES_STORAGE_KEY = "mumbai-local-quick-routes-v1";
+const MAX_QUICK_ROUTES = 3;
+
+type QuickRoute = {
+  id: string;
+  from: string;
+  to: string;
+  originOnly: boolean;
+};
 
 type TrainSearchShellProps = {
   stations: StationOption[];
@@ -29,12 +39,71 @@ export function TrainSearchShell({
   const [originOnly, setOriginOnly] = useState(true);
   const [response, setResponse] = useState<TrainSearchApiResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [quickRoutes, setQuickRoutes] = useState<QuickRoute[]>([]);
   const [isPending, startTransition] = useTransition();
 
   const stationNames = useMemo(
     () => stations.map((station) => `${station.name} (${station.line})`),
     [stations],
   );
+
+  useEffect(() => {
+    try {
+      const savedRoutes = window.localStorage.getItem(QUICK_ROUTES_STORAGE_KEY);
+
+      if (!savedRoutes) {
+        return;
+      }
+
+      const parsedRoutes = JSON.parse(savedRoutes) as QuickRoute[];
+
+      if (Array.isArray(parsedRoutes)) {
+        setQuickRoutes(parsedRoutes.slice(0, MAX_QUICK_ROUTES));
+      }
+    } catch {
+      window.localStorage.removeItem(QUICK_ROUTES_STORAGE_KEY);
+    }
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      QUICK_ROUTES_STORAGE_KEY,
+      JSON.stringify(quickRoutes),
+    );
+  }, [quickRoutes]);
+
+  const runSearch = async (
+    nextFrom: string,
+    nextTo: string,
+    nextTime: string,
+    nextOriginOnly: boolean,
+  ) => {
+    const params = new URLSearchParams({
+      from: nextFrom,
+      to: nextTo,
+      time: nextTime,
+      originOnly: String(nextOriginOnly),
+    });
+
+    const result = await fetch(`/api/trains?${params.toString()}`, {
+      method: "GET",
+      cache: "no-store",
+    });
+
+    const payload = (await result.json()) as
+      | TrainSearchApiResponse
+      | { error: string };
+
+    if (!result.ok) {
+      throw new Error("error" in payload ? payload.error : "Search failed.");
+    }
+
+    if ("error" in payload) {
+      throw new Error(payload.error);
+    }
+
+    setResponse(payload);
+  };
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -51,31 +120,7 @@ export function TrainSearchShell({
 
     startTransition(async () => {
       try {
-        const params = new URLSearchParams({
-          from,
-          to,
-          time,
-          originOnly: String(originOnly),
-        });
-
-        const result = await fetch(`/api/trains?${params.toString()}`, {
-          method: "GET",
-          cache: "no-store",
-        });
-
-        const payload = (await result.json()) as
-          | TrainSearchApiResponse
-          | { error: string };
-
-        if (!result.ok) {
-          throw new Error("error" in payload ? payload.error : "Search failed.");
-        }
-
-        if ("error" in payload) {
-          throw new Error(payload.error);
-        }
-
-        setResponse(payload);
+        await runSearch(from, to, time, originOnly);
       } catch (searchError) {
         setResponse(null);
         setError(
@@ -85,6 +130,71 @@ export function TrainSearchShell({
         );
       }
     });
+  };
+
+  const handleSwap = () => {
+    setFrom(to);
+    setTo(from);
+    setResponse(null);
+    setError(null);
+  };
+
+  const handleSaveQuickRoute = () => {
+    if (!from.trim() || !to.trim()) {
+      setError("Choose both stations before saving a quick route.");
+      return;
+    }
+
+    const nextRoute: QuickRoute = {
+      id: `${from}__${to}__${originOnly ? "origin" : "all"}`,
+      from,
+      to,
+      originOnly,
+    };
+
+    setQuickRoutes((currentRoutes) => {
+      const withoutDuplicate = currentRoutes.filter(
+        (route) => route.id !== nextRoute.id,
+      );
+
+      return [nextRoute, ...withoutDuplicate].slice(0, MAX_QUICK_ROUTES);
+    });
+    setError(null);
+  };
+
+  const handleQuickRouteSearch = (route: QuickRoute) => {
+    setFrom(route.from);
+    setTo(route.to);
+    setOriginOnly(route.originOnly);
+    setError(null);
+
+    if (!searchEnabled) {
+      setResponse(null);
+      setError(
+        maintenanceMessage ??
+          "Search is temporarily unavailable while production data is being configured.",
+      );
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        await runSearch(route.from, route.to, time, route.originOnly);
+      } catch (searchError) {
+        setResponse(null);
+        setError(
+          searchError instanceof Error
+            ? searchError.message
+            : "Unable to search trains right now.",
+        );
+      }
+    });
+  };
+
+  const handleRemoveQuickRoute = (routeId: string) => {
+    setQuickRoutes((currentRoutes) =>
+      currentRoutes.filter((route) => route.id !== routeId),
+    );
   };
 
   const activeFreshness = response?.freshness ?? freshness;
@@ -107,6 +217,18 @@ export function TrainSearchShell({
               disabled={!searchEnabled}
               required
             />
+          </div>
+
+          <div className="swap-field">
+            <button
+              className="swap-button"
+              type="button"
+              onClick={handleSwap}
+              disabled={!searchEnabled || (!from && !to)}
+              aria-label="Swap from and to stations"
+            >
+              Swap
+            </button>
           </div>
 
           <div className="field">
@@ -135,6 +257,54 @@ export function TrainSearchShell({
               required
             />
           </div>
+        </div>
+
+        <div className="quick-routes">
+          <div className="quick-routes-header">
+            <strong>Quick routes</strong>
+            <button
+              type="button"
+              className="text-button"
+              onClick={handleSaveQuickRoute}
+              disabled={!searchEnabled || !from.trim() || !to.trim()}
+            >
+              Save current route
+            </button>
+          </div>
+
+          {quickRoutes.length === 0 ? (
+            <p className="quick-routes-empty">
+              Save up to three commute routes for one-tap search.
+            </p>
+          ) : (
+            <div className="quick-route-list">
+              {quickRoutes.map((route) => (
+                <div className="quick-route-card" key={route.id}>
+                  <button
+                    type="button"
+                    className="quick-route-button"
+                    onClick={() => handleQuickRouteSearch(route)}
+                    disabled={!searchEnabled}
+                  >
+                    <span>
+                      {route.from} to {route.to}
+                    </span>
+                    <small>
+                      {route.originOnly ? "Starts here only" : "All matching trains"}
+                    </small>
+                  </button>
+                  <button
+                    type="button"
+                    className="quick-route-remove"
+                    onClick={() => handleRemoveQuickRoute(route.id)}
+                    aria-label={`Remove quick route ${route.from} to ${route.to}`}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <label className="checkbox-row" htmlFor="origin-only">

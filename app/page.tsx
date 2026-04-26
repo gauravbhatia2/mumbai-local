@@ -32,6 +32,11 @@ export default async function HomePage() {
     };
   }
 
+  const searchEnabled =
+    stations.length > 0 ||
+    runtimeStatus.dependenciesConfigured ||
+    runtimeStatus.allowDemoData;
+
   return (
     <main className="page-shell">
       <section className="hero-panel">
@@ -48,11 +53,9 @@ export default async function HomePage() {
           stations={stations}
           freshness={runtimeStatus.freshness}
           initialTime={getCurrentMumbaiTime()}
-          searchEnabled={
-            runtimeStatus.dependenciesConfigured || runtimeStatus.allowDemoData
-          }
+          searchEnabled={searchEnabled}
           maintenanceMessage={
-            runtimeStatus.appStatus === "maintenance"
+            runtimeStatus.appStatus === "maintenance" && !searchEnabled
               ? runtimeStatus.freshness.message ??
                 "Search is temporarily unavailable while production data is being configured."
               : null

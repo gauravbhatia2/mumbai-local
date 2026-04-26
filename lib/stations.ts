@@ -50,7 +50,7 @@ const loadStations = unstable_cache(
 
     return (data ?? []) as StationOption[];
   },
-  ["station-options-v2"],
+  ["station-options-v3"],
   {
     revalidate: 60 * 60 * 24,
     tags: ["stations"],
@@ -63,37 +63,49 @@ const loadRefreshMetadata = unstable_cache(
       return normalizeRefreshMetadata(demoRefreshMetadata);
     }
 
-    if (!hasSupabaseConfig()) {
+    try {
+      const supabase = createSupabaseAdmin();
+      const { data, error } = await supabase
+        .from("refresh_status_view")
+        .select(
+          "last_refresh_completed_at, last_refresh_status, active_slot, last_refresh_message",
+        )
+        .single();
+
+      if (error) {
+        throw new Error(`Unable to load refresh state: ${error.message}`);
+      }
+
+      return normalizeRefreshMetadata({
+        lastUpdatedAt: data.last_refresh_completed_at,
+        mode: "live",
+        status: data.last_refresh_status,
+        activeSlot: data.active_slot,
+        message: data.last_refresh_message,
+      });
+    } catch (error) {
+      if (!hasSupabaseConfig()) {
+        return normalizeRefreshMetadata({
+          lastUpdatedAt: null,
+          mode: "degraded",
+          status: "missing_configuration",
+          message:
+            "Search is unavailable until Supabase credentials are configured.",
+        });
+      }
+
       return normalizeRefreshMetadata({
         lastUpdatedAt: null,
         mode: "degraded",
-        status: "missing_configuration",
+        status: "runtime_error",
         message:
-          "Search is unavailable until Supabase credentials are configured.",
+          error instanceof Error
+            ? error.message
+            : "Unable to load refresh state.",
       });
     }
-
-    const supabase = createSupabaseAdmin();
-    const { data, error } = await supabase
-      .from("refresh_status_view")
-      .select(
-        "last_refresh_completed_at, last_refresh_status, active_slot, last_refresh_message",
-      )
-      .single();
-
-    if (error) {
-      throw new Error(`Unable to load refresh state: ${error.message}`);
-    }
-
-    return normalizeRefreshMetadata({
-      lastUpdatedAt: data.last_refresh_completed_at,
-      mode: "live",
-      status: data.last_refresh_status,
-      activeSlot: data.active_slot,
-      message: data.last_refresh_message,
-    });
   },
-  ["refresh-state-v2"],
+  ["refresh-state-v3"],
   {
     revalidate: 300,
     tags: ["refresh-state"],
