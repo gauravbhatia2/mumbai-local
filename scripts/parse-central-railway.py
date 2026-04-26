@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from urllib.parse import unquote, urljoin
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 
 import pdfplumber
 
@@ -27,8 +27,51 @@ ASSET_PATTERNS = [
     ("port_line", "Port Line", re.compile(r"PORT\s*LINE\s*PTT", re.I)),
 ]
 
+FALLBACK_ASSETS = [
+    (
+        "main_down",
+        "Central Main Line",
+        "https://cr.indianrailways.gov.in/cris/uploads/files/1728294831372-SUB%20PTT%20DN%20ML%2724.pdf",
+    ),
+    (
+        "main_up",
+        "Central Main Line",
+        "https://cr.indianrailways.gov.in/cris/uploads/files/1728294891897-SUB%20PTT%20UP%20ML%2724.pdf",
+    ),
+    (
+        "harbour_down",
+        "Harbour Line",
+        "https://cr.indianrailways.gov.in/cris/uploads/files/1728295099358-HB%20PTT%2005102024-DN.pdf",
+    ),
+    (
+        "harbour_up",
+        "Harbour Line",
+        "https://cr.indianrailways.gov.in/cris/uploads/files/1728295133534-HB%20PTT%2005102024-UP.pdf",
+    ),
+    (
+        "trans_harbour",
+        "Trans-Harbour Line",
+        "https://cr.indianrailways.gov.in/cris/uploads/files/1707135434187-TRANS%20HB%20PTT%20WEF%2013%20JAN%202024.pdf",
+    ),
+    (
+        "port_line",
+        "Port Line",
+        "https://cr.indianrailways.gov.in/cris/uploads/files/1770378300167-PORT%20LINE%20PTT%20WEF%2015.12.2025.pdf",
+    ),
+]
+
 ELLIPSIS_TOKENS = {"", "...", "-", ".", "`"}
 MOJIBAKE_TOKENS = ("\u00e2\u20ac\u00a6", "\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a6")
+REQUEST_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/135.0.0.0 Safari/537.36"
+    ),
+    "Accept": "text/html,application/pdf,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "en-IN,en;q=0.9",
+    "Connection": "close",
+}
 
 
 @dataclass
@@ -43,12 +86,16 @@ class TrainRecord:
 
 
 def fetch_text(url: str) -> str:
-    with urlopen(url, timeout=60) as response:
+    request = Request(url, headers=REQUEST_HEADERS)
+
+    with urlopen(request, timeout=60) as response:
         return response.read().decode("utf-8", errors="ignore")
 
 
 def download_bytes(url: str) -> bytes:
-    with urlopen(url, timeout=60) as response:
+    request = Request(url, headers=REQUEST_HEADERS)
+
+    with urlopen(request, timeout=60) as response:
         return response.read()
 
 
@@ -158,7 +205,15 @@ def parse_header_cell(cell: str | None) -> tuple[str | None, str, str]:
 
 
 def discover_assets(source_url: str) -> list[tuple[str, str, str]]:
-    page_html = fetch_text(source_url)
+    try:
+        page_html = fetch_text(source_url)
+    except Exception as error:
+        if "cr.indianrailways.gov.in" not in source_url:
+            raise
+
+        print(f"warning=source_page_fetch_failed using_fallback_assets error={error}", file=sys.stderr)
+        return FALLBACK_ASSETS
+
     pdf_urls = re.findall(r'href="([^"]+?\.pdf)"', page_html, flags=re.I)
     discovered: dict[str, tuple[str, str, str]] = {}
 
@@ -176,9 +231,12 @@ def discover_assets(source_url: str) -> list[tuple[str, str, str]]:
     missing_assets = [asset_id for asset_id, _, _ in ASSET_PATTERNS if asset_id not in discovered]
 
     if missing_assets:
-        raise RuntimeError(
-            f"Unable to discover all required Central Railway PDFs from source page. Missing: {', '.join(missing_assets)}"
+        print(
+            "warning=source_page_missing_assets using_fallback_assets "
+            f"missing={','.join(missing_assets)}",
+            file=sys.stderr,
         )
+        return FALLBACK_ASSETS
 
     return [discovered[asset_id] for asset_id, _, _ in ASSET_PATTERNS]
 
