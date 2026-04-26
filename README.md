@@ -36,6 +36,7 @@ Notes:
 
 - `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are used by the Vercel-hosted app for read-only server-side queries.
 - `DATABASE_URL` is used by the GitHub Action ingestion job to write directly into Supabase Postgres.
+- For GitHub Actions, `SUPABASE_DATABASE_URL` should use the Supabase pooler connection string from the Connect screen, not the direct `db.<project-ref>.supabase.co:5432` string. GitHub Actions commonly lacks IPv6 support.
 - `TIMETABLE_SOURCE_URL` should point to the official Central Railway timetable landing page. The parser resolves the linked PDFs and writes a normalized CSV.
 - `TIMETABLE_SOURCE_PATH` is the parser output path in production, or a local fallback CSV path for manual testing.
 - `REFRESH_STALE_HOURS` controls when the app marks live timetable data as degraded. Default: `36`.

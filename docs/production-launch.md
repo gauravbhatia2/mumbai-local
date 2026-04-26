@@ -39,6 +39,13 @@ Use the official Central Railway timetable landing page for `TIMETABLE_SOURCE_UR
 https://cr.indianrailways.gov.in/view_section.jsp?id=0,5,2360&lang=0
 ```
 
+For `SUPABASE_DATABASE_URL`, do not use the direct database host if the runner platform is IPv4-only. In Supabase, open `Connect` and copy one of these instead:
+
+- `Session pooler` on port `5432` for long-lived/persistent clients on IPv4-only networks
+- `Transaction pooler` on port `6543` for short-lived jobs like GitHub Actions
+
+GitHub Actions is specifically called out by Supabase as a platform that may not support direct IPv6 database connections reliably.
+
 ### Local-only variables
 
 - `DATABASE_URL`
