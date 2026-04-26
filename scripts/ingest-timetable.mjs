@@ -1,10 +1,13 @@
 import { createHash } from "node:crypto";
+import dns from "node:dns";
 import fs from "node:fs";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { parse } from "csv-parse/sync";
 import pg from "pg";
+
+dns.setDefaultResultOrder("ipv4first");
 
 const { Client } = pg;
 
